@@ -31,20 +31,75 @@ activityDF <- mutate(activityDF, date = ymd(as.character(date)))
 We'll use dplyr summarise and group by to calcualte the sum steps for each day  
 We'll load the ggplot2 pacakge for plots and plot the corrosponding Histogram
 ```{r groupby_day_and_sum_steps}
-sumByDay <- summarise(group_by(activityDF, date), sum_steps = sum(steps))
 library(ggplot2)
-qplot(sumByDay$sum_steps, geom="histogram", xlab = "Sum of Steps per day")
+sumByDay <- summarise(group_by(activityDF, date), sum_steps = sum(steps))
 meanSumByDay <- mean(sumByDay$sum_steps, na.rm = TRUE)
 medianSumByDay <- median(sumByDay$sum_steps, na.rm = TRUE)
+ggplot(sumByDay, aes(sum_steps)) + xlab("Total Number of Steps in a day") + ylab("Count") + ggtitle("Histogram of Total number of Steps in a Day") + geom_histogram(bins = 20)
+
 ```
 We have also calculated the the Mean of sums to be **_`r sprintf("%.2f", meanSumByDay)`_** and the Median of sums to be **_`r medianSumByDay`_**. 
 
 ## What is the average daily activity pattern?
+To calculate the avrage daily activity, we can calculate for each 5-min interval, the avrage of steps across all days.
 
+We'll use the summarise method from the dplyr package to calculate a new data frame and plot it using the ggplot package
 
+```{r avarage_interval_steps_across_days}
+avgInterval <- summarise(group_by(activityDF, interval), avg_interval = mean(steps, na.rm = TRUE))
+ggplot(avgInterval, aes(avgInterval$interval, avgInterval$avg_interval)) + geom_line() + ylab("Avg Steps in each day") + xlab("Interval") + ggtitle("Avarage steps in each interval across days")
+```
 
 ## Imputing missing values
+Before Imputing the missing values, let's see how many of them are there:
+```{r NA_summary}
+na_table <- table(is.na(activityDF$steps))
+mean_na <- mean(is.na(activityDF$steps))
+print(na_table)
+```
+We have `r na_table[2]` missing values out of `r length(activityDF$steps)` (~`r sprintf("%.2f", mean_na * 100)`%) which is considerable.
+In order to decide on an Imputing strategy, let's first explore the occurences of NA's per day and per interval
+
+```{r count_na_by_day_and_by_interval}
+na_by_day <- filter(aggregate(steps ~ date, data = activityDF, function(x) { sum(is.na(x)) }, na.action = NULL), steps > 0)
+na_by_interval <- filter(aggregate(steps ~ interval, data = activityDF, function(x) { sum(is.na(x)) }, na.action = NULL), steps > 0)
+print(na_by_day)
+print(na_by_interval)
+```
+Not very random, isn't it?
+
+Let's take a closer look
+```{r}
+activityDF.na <- filter(activityDF, is.na(steps))
+activityDF.na <- mutate(activityDF.na, date = ymd(as.character(date)))
+na_df <- data.frame(table(activityDF.na$date, activityDF.na$interval)[,])
+na_df
+```
+Since the NA have a distinct pattern, where if the day contains NA's (`r dim(na_df[1])` days), they all have data missing throughout the day (which can be a result of a sensor not working throughout the day)
+
+Judging by that, it wouldn't make much sense to add the missing values by a daily avrage.
+Another option is to calculate the avarage steps of each interval, and impute that data into each day. And although this will make more sense, it would change the avrage pattern of a day, since we're always inserting the avarage pattern for each day, and data is missing throught each day.
+
+So, the strategy i've decided to go with here is to calculate the interval steps avarage for each week seperatly, and impute missing data from the corrosponding week.
+
+This will allow to emphisis patterns that might emerege in a specific week.
+
+```
+NOTE: Another way to go about this, will be to add the weekday (Sunday might differ from Monday) to the imputing strategy.
+```
+So we'll calculate the week number for each entry, and calculate the mean for each interval for each week.
 
 
+We will then assign the activityDF to a new variable (so to not lose old data) and loop over it, and when we see a missing value, we will take the data from the avraged data we've just calculated, corrosponding with that week with that interval.
+```{r imputing_date}
+activityDF <- mutate(activityDF, week = as.numeric(strftime(activityDF$date, "%W")))
+avgStepsByWeekAndInterval <- aggregate(formula = steps ~ week + interval, data = activityDF, FUN = mean, na.rm = TRUE)
 
+assign("activityDF.full", activityDF)
+joined <- merge(x = activityDF.full, y = avgStepsByWeekAndInterval, by = c("interval", "week"))
+activityDF.full <- tbl_df(joined)
+activityDF.full <- mutate(activityDF.full, week = week, interval = interval, steps = ifelse(test = is.na(steps.x), steps.y, steps.x)) %>% select(one_of(c("date", "week", "interval", "steps"))) %>% arrange(week, date, interval)
+
+head(activityDF.full)
+```
 ## Are there differences in activity patterns between weekdays and weekends?
