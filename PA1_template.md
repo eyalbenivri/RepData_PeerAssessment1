@@ -53,6 +53,21 @@ ggplot(avgInterval, aes(avgInterval$interval, avgInterval$avg_interval)) + geom_
 
 ![](PA1_template_files/figure-html/avarage_interval_steps_across_days-1.png)
 
+Furthermore, we can see which time interval has the most steps on avarage.
+
+
+```r
+avgInterval[which.max(avgInterval$avg_interval),c("interval")]
+```
+
+```
+## Source: local data frame [1 x 1]
+## 
+##   interval
+##      (int)
+## 1      835
+```
+
 ## Imputing missing values
 Before Imputing the missing values, let's see how many of them are there:
 

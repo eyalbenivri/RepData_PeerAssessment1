@@ -49,6 +49,12 @@ avgInterval <- summarise(group_by(activityDF, interval), avg_interval = mean(ste
 ggplot(avgInterval, aes(avgInterval$interval, avgInterval$avg_interval)) + geom_line() + ylab("Avg Steps in each day") + xlab("Interval") + ggtitle("Avarage steps in each interval across days")
 ```
 
+Furthermore, we can see which time interval has the most steps on avarage.
+
+```{r which_max_interval}
+avgInterval[which.max(avgInterval$avg_interval),c("interval")]
+```
+
 ## Imputing missing values
 Before Imputing the missing values, let's see how many of them are there:
 ```{r NA_summary}
