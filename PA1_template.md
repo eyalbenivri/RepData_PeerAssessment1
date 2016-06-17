@@ -511,3 +511,19 @@ Due to the imputing process, we see how the histogram has changes. The Mean and 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+We'll start by adding a weekend variable to the imputed activity data frame.
+Then calculate the mean steps each interval during the day, while splitting the calculations to weekends and weekdays.
+
+
+```r
+activityDF.full <- mutate(activityDF.full, weekend = factor(ifelse(weekdays(date) %in% c("Saturday", "Sunday"), "weekend", "weekday")))
+
+avgDailyStepsByWeekend <- aggregate(formula = steps ~ interval + weekend, data = activityDF.full, FUN = mean)
+
+ggplot(activityDF.full, aes(interval, steps, col = weekend)) + geom_line() + facet_grid(weekend ~ .) + ylab("Mean Steps") + xlab("5 Min intervals during the day") + ggtitle("Weekdays Vs. Weekdays avarage activity")
+```
+
+![](PA1_template_files/figure-html/avg_steps_per_interval_split_by_weekend-1.png)
+
+Looks like during weekends, the activity is fewer and starts later during the day and ends earlier. 
