@@ -62,8 +62,8 @@ In order to decide on an Imputing strategy, let's first explore the occurences o
 ```{r count_na_by_day_and_by_interval}
 na_by_day <- filter(aggregate(steps ~ date, data = activityDF, function(x) { sum(is.na(x)) }, na.action = NULL), steps > 0)
 na_by_interval <- filter(aggregate(steps ~ interval, data = activityDF, function(x) { sum(is.na(x)) }, na.action = NULL), steps > 0)
-print(na_by_day)
-print(na_by_interval)
+summary(na_by_day)
+summary(na_by_interval)
 ```
 Not very random, isn't it?
 
@@ -72,7 +72,7 @@ Let's take a closer look
 activityDF.na <- filter(activityDF, is.na(steps))
 activityDF.na <- mutate(activityDF.na, date = ymd(as.character(date)))
 na_df <- data.frame(table(activityDF.na$date, activityDF.na$interval)[,])
-na_df
+summary(na_df)
 ```
 Since the NA have a distinct pattern, where if the day contains NA's (`r dim(na_df[1])` days), they all have data missing throughout the day (which can be a result of a sensor not working throughout the day)
 
