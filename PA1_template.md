@@ -38,7 +38,7 @@ ggplot(sumByDay, aes(sum_steps)) + xlab("Total Number of Steps in a day") + ylab
 ```
 
 ![](PA1_template_files/figure-html/groupby_day_and_sum_steps-1.png)
-We have also calculated the the Mean of sums to be **_10766.19_** and the Median of sums to be **_10765_**. 
+We have also calculated the Mean of sums to be **_10766.19_** and the Median of sums to be **_10765_**. 
 
 ## What is the average daily activity pattern?
 To calculate the avrage daily activity, we can calculate for each 5-min interval, the avrage of steps across all days.
@@ -681,4 +681,24 @@ head(activityDF.full)
 ## 5 2012-10-01    40       20 0.000000
 ## 6 2012-10-01    40       25 0.000000
 ```
+
+Now that we have a fixed data set, we will re-run the calculations to come up with a sum per day, and put each sum on a histogram.
+
+```r
+sumByDay.full <- summarise(group_by(activityDF.full, date), sum_steps = sum(steps))
+sumByDay <- mutate(sumByDay, mode = factor("WithNA"))
+sumByDay.full <- mutate(sumByDay.full, mode = factor("Imputed"))
+sumByDay.joined <- rbind(sumByDay, sumByDay.full)
+
+meanSumByDay.full <- mean(sumByDay$sum_steps, na.rm = TRUE)
+medianSumByDay.full <- median(sumByDay$sum_steps, na.rm = TRUE)
+
+ggplot(sumByDay.joined, aes(x = sum_steps, fill = mode)) +  geom_histogram(alpha = 0.5, bins = 20, position = "identity") + xlab("Total Number of Steps in a day") + ylab("Count") + ggtitle("Histogram of Total number of Steps in a Day (Imputed vs. With NA)")
+```
+
+![](PA1_template_files/figure-html/groupby_day_and_sum_steps_2-1.png)
+Due to the imputing process, we see how the histogram has changes. The Mean and median of sums has not changed and stayed on **_10766.19_** and **_10765_** respectivly. 
+
+
+
 ## Are there differences in activity patterns between weekdays and weekends?
